@@ -1,0 +1,23 @@
+{
+	"name": "fundo-de-caixa",
+	"version": "1.0.0",
+	"description": "",
+	"main": "index.js",
+	"scripts": {
+		"create-tables": "npx ts-node src/database/syncDB.ts",
+		"dev": "ts-node-dev --inspect --transpile-only --ignore-watch node_modules app.ts",
+		"build": "tsc"
+	},
+	"author": "",
+	"license": "ISC",
+	"devDependencies": {
+		"@types/express": "^5.0.0",
+		"ts-node-dev": "^2.0.0",
+		"typescript": "^5.7.3"
+	},
+	"dependencies": {
+		"express": "^4.21.2",
+		"sqlite": "^5.1.1",
+		"sqlite3": "^5.1.7"
+	}
+}
