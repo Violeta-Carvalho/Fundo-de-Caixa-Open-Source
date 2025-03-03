@@ -1,7 +1,26 @@
 import { DataTypes, Model } from "sequelize";
 import db from "../database/db";
 
-class Shift extends Model {}
+type ShiftAttributes = {
+	id: number;
+	member_name: string;
+	started_at: Date;
+	ended_at?: Date;
+	deleted_at?: Date;
+	starting_value: number;
+	expected_end_value?: number;
+	actual_end_value?: number;
+}
+
+type ShiftCreationAttributes = {
+	member_name: string;
+	started_at: Date;
+	starting_value: number;
+}
+
+class Shift extends Model<ShiftAttributes, ShiftCreationAttributes> {
+	ended_at?: Date;
+}
 
 Shift.init(
 	{

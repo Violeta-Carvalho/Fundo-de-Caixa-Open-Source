@@ -1,9 +1,8 @@
-import { Database, Statement } from "sqlite";
 import {
 	CloseShiftDTO,
-	IShift,
+	IPaginatedShifts,
 	OpenShiftDTO,
-} from "../interfaces.ts/shiftInterface";
+} from "../interfaces/shiftInterface";
 import Shift from "../models/shiftModel";
 import { Op } from "sequelize";
 
@@ -12,16 +11,22 @@ class ShiftService {
 		shifts: any[],
 		limit: number,
 		page: number
-	): Promise<any> {
+	): Promise<IPaginatedShifts> {
 		const totalShifts = await Shift.count({
 			where: {
-				deleted_at: { [Op.eq]: null },
+				deleted_at: { [Op.eq]: undefined },
 			},
 		});
 
+		let last_page = Math.ceil(totalShifts / limit) - 1;
+
+		if (last_page < 0) {
+			last_page = 0;
+		}
+
 		const paginatedShifts = {
 			current_page: page,
-			last_page: Math.ceil(totalShifts / limit) - 1,
+			last_page,
 			amount_shown: shifts.length,
 			content: shifts,
 		};
@@ -29,19 +34,19 @@ class ShiftService {
 		return paginatedShifts;
 	}
 
-	async getOpenShifts(): Promise<any[]> {
+	async getOpenShifts(): Promise<Shift[]> {
 		const openShifts = await Shift.findAll({
 			where: {
-				ended_at: { [Op.eq]: null },
-				deleted_at: { [Op.eq]: null },
+				ended_at: { [Op.eq]: undefined },
+				deleted_at: { [Op.eq]: undefined },
 			},
 		});
+
 		return openShifts;
 	}
 
-	async openNewShift(shift: OpenShiftDTO): Promise<any> {
+	async openNewShift(shift: OpenShiftDTO): Promise<Shift> {
 		const openShifts = await this.getOpenShifts();
-		console.log(openShifts);
 
 		if (openShifts.length > 0) {
 			throw new Error("There is an open shift already.");
@@ -52,32 +57,34 @@ class ShiftService {
 		const openedShift = await Shift.create({
 			member_name,
 			starting_value,
-			started_at: now.toISOString(),
+			started_at: now,
 		});
 
 		return openedShift;
 	}
 
-	async getShiftById(id: number): Promise<any> {
+	async getShiftById(id: number): Promise<Shift | null> {
 		const shift = await Shift.findOne({
 			where: {
 				id,
-				deleted_at: { [Op.eq]: null },
+				deleted_at: { [Op.eq]: undefined },
 			},
 		});
+
 		return shift;
 	}
 
-	async getAllShifts(limit: number, page: number): Promise<any[]> {
+	async getAllShifts(limit: number, page: number): Promise<IPaginatedShifts> {
 		const shifts = await Shift.findAll({
 			where: {
-				deleted_at: { [Op.eq]: null },
+				deleted_at: { [Op.eq]: undefined },
 			},
 			limit,
 			offset: page * limit,
 		});
 
 		const paginatedShifts = await this.paginateShifts(shifts, limit, page);
+
 		return paginatedShifts;
 	}
 
@@ -87,7 +94,7 @@ class ShiftService {
 	): Promise<any> {
 		const currentShift = await this.getShiftById(id);
 
-		if (!currentShift || currentShift.ended_at) {
+		if (!currentShift || currentShift?.ended_at) {
 			throw new Error("Shift does not exist or is already closed.");
 		}
 
@@ -98,7 +105,7 @@ class ShiftService {
 			{
 				actual_end_value,
 				expected_end_value,
-				ended_at: now.toISOString(),
+				ended_at: now,
 			},
 			{
 				where: { id },
@@ -118,7 +125,7 @@ class ShiftService {
 		const now = new Date();
 		await Shift.update(
 			{
-				deleted_at: now.toISOString(),
+				deleted_at: now,
 			},
 			{
 				where: { id },
